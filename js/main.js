@@ -1,14 +1,23 @@
 (() => {
-  // Footer year
+  /**
+   * Site behavior:
+   * - Updates the footer year
+   * - Sets a CSS scroll padding var so in-page anchors land below the sticky header
+   * - Contact modal (supports #contact, focus trap, Escape, and copy-to-clipboard)
+   * - Carousel (crossfade, infinite loop, swipe, keyboard, optional autoplay)
+   */
+
+  // --- Footer year ---
   const year = document.getElementById("year");
   if (year) year.textContent = String(new Date().getFullYear());
 
-  // Header height -> CSS scroll padding
+  // --- Sticky header: keep anchor jumps from hiding under the header ---
   const header = document.querySelector("[data-header]");
   const getHeaderH = () => (header ? Math.ceil(header.getBoundingClientRect().height) : 0);
 
   const setScrollPad = () => {
     const h = getHeaderH();
+    // Minimum keeps spacing comfortable even if the header is very small.
     const pad = Math.max(72, h + 14);
     document.documentElement.style.setProperty("--scroll-pad", `${pad}px`);
   };
@@ -18,12 +27,13 @@
 
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // --- Contact Modal ---
+  // --- Contact modal ---
   const modal = document.querySelector("[data-contact-modal]");
   const panel = document.querySelector("[data-contact-panel]");
   const openers = Array.from(document.querySelectorAll("[data-contact-open]"));
   const closers = Array.from(document.querySelectorAll("[data-contact-close]"));
 
+  // Track the element that opened the modal so we can restore focus on close.
   let lastFocus = null;
 
   const getFocusable = (root) => {
@@ -44,10 +54,12 @@
     modal.removeAttribute("hidden");
     document.body.classList.add("modal-open");
 
+    // Keep the URL shareable while the modal is open.
     if (location.hash !== "#contact") {
       history.replaceState(null, "", "#contact");
     }
 
+    // Focus the panel so keyboard users land in the dialog.
     window.setTimeout(() => {
       panel.focus({ preventScroll: true });
     }, 0);
@@ -60,6 +72,7 @@
     modal.setAttribute("hidden", "");
     document.body.classList.remove("modal-open");
 
+    // Remove the hash when closing (so Back doesn't immediately re-open).
     if (location.hash === "#contact") {
       history.replaceState(null, "", location.pathname + location.search);
     }
@@ -69,12 +82,13 @@
         try {
           lastFocus.focus({ preventScroll: true });
         } catch {
-          // no-op
+          // If the element is gone, do nothing.
         }
       }, 0);
     }
   };
 
+  // Open the modal if the page loads (or navigates) to #contact.
   const openOnHash = () => {
     if (location.hash === "#contact") openContact();
   };
@@ -95,7 +109,7 @@
     });
   });
 
-  // Trap focus + Esc
+  // Focus trap + Escape to close.
   document.addEventListener("keydown", (e) => {
     if (!modal || modal.hasAttribute("hidden")) return;
 
@@ -130,7 +144,7 @@
     }
   });
 
-  // Copy helpers
+  // Clipboard helper with a small fallback for older/stricter browsers.
   const copyText = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -154,7 +168,6 @@
     }
   };
 
-  // Copy email
   const copyEmailBtn = document.querySelector("[data-copy-email]");
   const copyStatus = document.querySelector("[data-copy-status]");
   if (copyEmailBtn) {
@@ -171,7 +184,7 @@
     });
   }
 
-  // Intercept #contact anchor clicks (if any)
+  // If there's a plain #contact anchor somewhere, treat it like an "open modal" action.
   document.addEventListener(
     "click",
     (e) => {
@@ -188,7 +201,7 @@
     true
   );
 
-  // --- Carousel (crossfade, infinite, swipe) ---
+  // --- Carousel (crossfade, infinite loop, swipe) ---
   const root = document.querySelector("[data-carousel]");
   if (!root) return;
 
@@ -207,14 +220,14 @@
   const n = slides.length;
   let index = 0;
 
-  // Make sure the first image is not lazy so we never show a blank frame.
+  // Ensure the first frame always paints quickly (no blank carousel on first load).
   const firstImg = slides[0].querySelector("img");
   if (firstImg) {
     firstImg.loading = "eager";
     firstImg.fetchPriority = "high";
   }
 
-  // Dots
+  // Build dots based on the number of slides.
   const dots = slides.map((_, i) => {
     const b = document.createElement("button");
     b.type = "button";
@@ -233,7 +246,7 @@
       s.classList.toggle("is-active", isActive);
       s.setAttribute("aria-hidden", isActive ? "false" : "true");
 
-      // Keep inactive slides out of the tab order.
+      // Keep non-active slides out of the tab order so keyboard focus doesn't disappear.
       const focusables = s.querySelectorAll('a[href], button, input, select, textarea, [tabindex]');
       focusables.forEach((el) => {
         if (!(el instanceof HTMLElement)) return;
@@ -270,7 +283,7 @@
   prev.addEventListener("click", () => step(-1, true));
   next.addEventListener("click", () => step(1, true));
 
-  // Keyboard support
+  // Keyboard support (when the carousel has focus).
   const onKey = (e) => {
     if (e.key === "ArrowLeft") {
       e.preventDefault();
@@ -283,7 +296,7 @@
   root.addEventListener("keydown", onKey);
   track.addEventListener("keydown", onKey);
 
-  // Swipe
+  // Swipe (Pointer Events) with a little axis-lock so vertical scroll still works.
   let startX = 0;
   let startY = 0;
   let dragging = false;
@@ -305,13 +318,13 @@
     const dy = e.clientY - startY;
 
     if (!axis) {
+      // Ignore tiny movements so clicks/taps still feel normal.
       if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
       axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
     }
 
-    if (axis === "x") {
-      e.preventDefault();
-    }
+    // If we're swiping horizontally, prevent the page from scrolling.
+    if (axis === "x") e.preventDefault();
   };
 
   const onUp = (e) => {
@@ -337,7 +350,8 @@
   frame.addEventListener("pointerup", onUp);
   frame.addEventListener("pointercancel", onUp);
 
-  // Autoplay + progress
+  // --- Autoplay + progress ---
+  // Uses requestAnimationFrame so the progress bar stays in sync.
   let auto = !prefersReducedMotion;
   const intervalMs = 6500;
   let startTs = 0;
@@ -394,7 +408,7 @@
     else startAuto();
   });
 
-  // Pause autoplay on hover/focus
+  // Temporarily pause autoplay while the user interacts.
   let wasRunning = auto;
   const tempPause = () => {
     wasRunning = auto;
