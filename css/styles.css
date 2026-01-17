@@ -630,18 +630,6 @@ h2{
     transform 0.1s ease;
 }
 
-.cbtn.ghost[data-toggle] {
-  cursor: pointer;
-  transition:
-    box-shadow 0.15s ease,
-    transform 0.1s ease;
-}
-
-.cbtn.ghost[data-toggle]:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-}
-
 .cbtn.ghost[data-toggle]:focus-visible {
   outline: none;
   box-shadow:
@@ -649,6 +637,18 @@ h2{
     0 0 0 4px rgba(0, 0, 0, 0.35);
 }
 
+/* Only apply hover + active feedback on devices that support hover */
+@media (hover: hover) and (pointer: fine) {
+  .cbtn.ghost[data-toggle]:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+  }
+
+  .cbtn.ghost[data-toggle]:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  }
+}
 /* Only apply hover styling on devices that truly support hover */
 @media (hover: hover) and (pointer: fine) {
   .cbtn.ghost[data-toggle]:hover {
