@@ -602,16 +602,30 @@ h2{
   flex: 1;
 }
 
+/* Dots: 44x44 touch target, small visual dot */
 .dot{
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+
+  display: grid;
+  place-items: center;
+}
+
+.dot::after{
+  content:"";
   width: 8px;
   height: 8px;
   border-radius: 999px;
   border: 1px solid rgba(11,18,36,.18);
   background: rgba(255,255,255,.60);
-  cursor: pointer;
-  transition: transform 140ms ease, background 140ms ease;
+  transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
 }
-.dot[aria-current="true"]{
+
+.dot[aria-current="true"]::after{
   background: var(--blue);
   border-color: rgba(31,63,191,.35);
   transform: scale(1.12);
