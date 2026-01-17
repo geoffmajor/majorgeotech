@@ -1,3 +1,7 @@
+/* This file is your existing styles.css with a crossfade carousel override appended.
+   Paste this OVER your current css/styles.css.
+*/
+
 :root{
   --blue: #1f3fbf;
   --blue2: #0b2fa6;
@@ -961,4 +965,38 @@ body.modal-open{ overflow: hidden; }
 
 @media (prefers-reduced-motion: reduce){
   .carousel-track{ scroll-behavior: auto; }
+}
+/* === Carousel override: crossfade (fixes blank images + enables true infinite loop) === */
+
+.carousel-track{
+  /* Disable scrolling behavior for the carousel area */
+  overflow: hidden !important;
+  overflow-x: hidden !important;
+  scroll-snap-type: none !important;
+  scroll-behavior: auto !important;
+  -webkit-overflow-scrolling: auto !important;
+
+  /* Crossfade stack */
+  position: relative;
+  height: 100% !important;
+}
+
+.slide{
+  position: absolute !important;
+  inset: 0;
+  margin: 0 !important;
+  min-width: 100% !important;
+  height: 100% !important;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 420ms ease;
+}
+
+.slide.is-active{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .slide{ transition: none; }
 }

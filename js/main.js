@@ -16,7 +16,7 @@
   setScrollPad();
   window.addEventListener("resize", setScrollPad, { passive: true });
 
-  const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // --- Contact Modal ---
   const modal = document.querySelector("[data-contact-modal]");
@@ -164,7 +164,9 @@
       const ok = await copyText(email);
       if (copyStatus) {
         copyStatus.textContent = ok ? "Copied." : "Could not copy.";
-        window.setTimeout(() => { copyStatus.textContent = ""; }, 1400);
+        window.setTimeout(() => {
+          copyStatus.textContent = "";
+        }, 1400);
       }
     });
   }
@@ -186,7 +188,7 @@
     true
   );
 
-  // --- Carousel ---
+  // --- Carousel (crossfade, infinite, swipe) ---
   const root = document.querySelector("[data-carousel]");
   if (!root) return;
 
@@ -200,93 +202,155 @@
   const progress = root.querySelector("[data-progress]");
   const frame = root.querySelector(".carousel-frame");
 
-  if (!track || slides.length === 0 || !prev || !next || !dotsWrap || !toggleAuto) return;
+  if (!track || slides.length === 0 || !prev || !next || !dotsWrap || !toggleAuto || !frame) return;
 
+  const n = slides.length;
   let index = 0;
-  let auto = !prefersReduced;
-  const intervalMs = 6500;
 
-  const setToggleA11y = () => {
-  if (!toggleAuto) return;
-  const isPlaying = auto && !prefersReduced;
-  const label = isPlaying ? "Pause" : "Play";
-  if (toggleLabel) toggleLabel.textContent = label;
-  toggleAuto.setAttribute("aria-label", isPlaying ? "Pause slideshow" : "Play slideshow");
-};
+  // Make sure the first image is not lazy so we never show a blank frame.
+  const firstImg = slides[0].querySelector("img");
+  if (firstImg) {
+    firstImg.loading = "eager";
+    firstImg.fetchPriority = "high";
+  }
 
-  // Scroll-snap based carousel.
-  // This avoids WebKit rounding glitches that can happen when animating a
-  // transformed track inside an overflow+radius container.
-  const getSlideWidth = () => track.getBoundingClientRect().width;
-
+  // Dots
   const dots = slides.map((_, i) => {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "dot";
-    b.setAttribute("aria-label", `Go to slide ${i + 1}`);
+    b.setAttribute("aria-label", `Go to image ${i + 1}`);
     b.addEventListener("click", () => goTo(i, true));
     dotsWrap.appendChild(b);
     return b;
   });
 
-  const clampIndex = (i) => (i + slides.length) % slides.length;
+  const clamp = (i) => (i + n) % n;
 
-  const setDots = () => {
+  const setActive = () => {
+    slides.forEach((s, i) => {
+      const isActive = i === index;
+      s.classList.toggle("is-active", isActive);
+      s.setAttribute("aria-hidden", isActive ? "false" : "true");
+
+      // Keep inactive slides out of the tab order.
+      const focusables = s.querySelectorAll('a[href], button, input, select, textarea, [tabindex]');
+      focusables.forEach((el) => {
+        if (!(el instanceof HTMLElement)) return;
+        if (isActive) {
+          if (el.hasAttribute("data-prev-tabindex")) {
+            el.setAttribute("tabindex", el.getAttribute("data-prev-tabindex"));
+            el.removeAttribute("data-prev-tabindex");
+          } else if (el.getAttribute("tabindex") === "-1") {
+            el.removeAttribute("tabindex");
+          }
+        } else {
+          if (el.hasAttribute("tabindex")) {
+            el.setAttribute("data-prev-tabindex", el.getAttribute("tabindex"));
+          }
+          el.setAttribute("tabindex", "-1");
+        }
+      });
+    });
+
     dots.forEach((d, i) => {
       if (i === index) d.setAttribute("aria-current", "true");
       else d.removeAttribute("aria-current");
     });
   };
 
-  const scrollToIndex = (i, behavior) => {
-    const w = getSlideWidth();
-    track.scrollTo({ left: i * w, top: 0, behavior });
-  };
-
-  const render = (behavior = "auto") => {
-    index = clampIndex(index);
-    scrollToIndex(index, behavior);
-    setDots();
-  };
-
   const goTo = (i, user = false) => {
-    index = clampIndex(i);
-    const behavior = prefersReduced ? "auto" : "smooth";
-    render(user ? behavior : "auto");
+    index = clamp(i);
+    setActive();
     if (user) restartAuto();
   };
 
-  const step = (dir) => goTo(index + dir, true);
+  const step = (dir, user = false) => goTo(index + dir, user);
 
-  prev.addEventListener("click", () => step(-1));
-  next.addEventListener("click", () => step(1));
+  prev.addEventListener("click", () => step(-1, true));
+  next.addEventListener("click", () => step(1, true));
 
-  // Keep index in sync with manual scrolling / swipe.
-  let raf = 0;
-  const syncFromScroll = () => {
-    raf = 0;
-    const w = Math.max(1, getSlideWidth());
-    const nextIndex = clampIndex(Math.round(track.scrollLeft / w));
-    if (nextIndex !== index) {
-      index = nextIndex;
-      setDots();
-      restartAuto();
+  // Keyboard support
+  const onKey = (e) => {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      step(-1, true);
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      step(1, true);
+    }
+  };
+  root.addEventListener("keydown", onKey);
+  track.addEventListener("keydown", onKey);
+
+  // Swipe
+  let startX = 0;
+  let startY = 0;
+  let dragging = false;
+  let axis = null;
+
+  const onDown = (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    dragging = true;
+    axis = null;
+    startX = e.clientX;
+    startY = e.clientY;
+    frame.setPointerCapture?.(e.pointerId);
+    tempPause();
+  };
+
+  const onMove = (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    if (!axis) {
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+      axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+    }
+
+    if (axis === "x") {
+      e.preventDefault();
     }
   };
 
-  track.addEventListener(
-    "scroll",
-    () => {
-      if (raf) return;
-      raf = requestAnimationFrame(syncFromScroll);
-    },
-    { passive: true }
-  );
+  const onUp = (e) => {
+    if (!dragging) return;
+    dragging = false;
+
+    if (axis !== "x") {
+      tempResume();
+      return;
+    }
+
+    const dx = e.clientX - startX;
+    const threshold = Math.max(40, frame.getBoundingClientRect().width * 0.12);
+
+    if (dx > threshold) step(-1, true);
+    else if (dx < -threshold) step(1, true);
+
+    tempResume();
+  };
+
+  frame.addEventListener("pointerdown", onDown);
+  frame.addEventListener("pointermove", onMove, { passive: false });
+  frame.addEventListener("pointerup", onUp);
+  frame.addEventListener("pointercancel", onUp);
 
   // Autoplay + progress
+  let auto = !prefersReducedMotion;
+  const intervalMs = 6500;
   let startTs = 0;
+  let rafId = 0;
+
+  const setToggleA11y = () => {
+    const isPlaying = auto && !prefersReducedMotion;
+    if (toggleLabel) toggleLabel.textContent = isPlaying ? "Pause" : "Play";
+    toggleAuto.setAttribute("aria-label", isPlaying ? "Pause slideshow" : "Play slideshow");
+  };
+
   const tick = (ts) => {
-    if (!auto || prefersReduced) return;
+    if (!auto || prefersReducedMotion) return;
     if (!startTs) startTs = ts;
 
     const elapsed = ts - startTs;
@@ -295,29 +359,32 @@
 
     if (elapsed >= intervalMs) {
       startTs = ts;
-      goTo(index + 1, false);
+      step(1, false);
     }
 
-    requestAnimationFrame(tick);
+    rafId = requestAnimationFrame(tick);
   };
 
   const stopAuto = () => {
     auto = false;
     if (progress) progress.style.width = "0%";
     startTs = 0;
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = 0;
     setToggleA11y();
   };
 
   const startAuto = () => {
-    if (prefersReduced) return;
+    if (prefersReducedMotion) return;
     auto = true;
     startTs = 0;
     setToggleA11y();
-    requestAnimationFrame(tick);
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(tick);
   };
 
   const restartAuto = () => {
-    if (!auto || prefersReduced) return;
+    if (!auto || prefersReducedMotion) return;
     startTs = 0;
     if (progress) progress.style.width = "0%";
   };
@@ -334,69 +401,16 @@
     if (auto) stopAuto();
   };
   const tempResume = () => {
-    if (wasRunning && !prefersReduced) startAuto();
+    if (wasRunning && !prefersReducedMotion) startAuto();
   };
 
-  if (frame) {
-    frame.addEventListener("mouseenter", tempPause);
-    frame.addEventListener("mouseleave", tempResume);
-    frame.addEventListener("focusin", tempPause);
-    frame.addEventListener("focusout", tempResume);
-  }
+  frame.addEventListener("mouseenter", tempPause);
+  frame.addEventListener("mouseleave", tempResume);
+  frame.addEventListener("focusin", tempPause);
+  frame.addEventListener("focusout", tempResume);
 
-  // Keyboard support
-  const onCarouselKeydown = (e) => {
-    if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      step(-1);
-    }
-    if (e.key === "ArrowRight") {
-      e.preventDefault();
-      step(1);
-    }
-  };
-
-  root.addEventListener("keydown", onCarouselKeydown);
-  track.addEventListener("keydown", onCarouselKeydown);
-
-  // Optional mouse drag-to-scroll (mobile gets native swipe).
-  let dragging = false;
-  let dragStartX = 0;
-  let dragStartLeft = 0;
-
-  if (frame) {
-    frame.addEventListener("pointerdown", (e) => {
-      if (e.pointerType !== "mouse") return;
-      dragging = true;
-      dragStartX = e.clientX;
-      dragStartLeft = track.scrollLeft;
-      frame.setPointerCapture?.(e.pointerId);
-    });
-
-    frame.addEventListener("pointermove", (e) => {
-      if (!dragging) return;
-      e.preventDefault();
-      const dx = e.clientX - dragStartX;
-      track.scrollLeft = dragStartLeft - dx;
-    });
-
-    const endDrag = () => {
-      if (!dragging) return;
-      dragging = false;
-
-      // Snap to nearest slide immediately after dragging stops.
-      const w = Math.max(1, getSlideWidth());
-      index = clampIndex(Math.round(track.scrollLeft / w));
-      render("smooth");
-      restartAuto();
-    };
-
-    frame.addEventListener("pointerup", endDrag);
-    frame.addEventListener("pointercancel", endDrag);
-    frame.addEventListener("pointerleave", endDrag);
-  }
-
-  render("auto");
+  // Init
   setToggleA11y();
-  if (auto && !prefersReduced) requestAnimationFrame(tick);
+  setActive();
+  if (auto && !prefersReducedMotion) rafId = requestAnimationFrame(tick);
 })();
