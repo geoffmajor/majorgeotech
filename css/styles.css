@@ -598,11 +598,12 @@ h2{
   display:flex;
   align-items:center;
   justify-content:center;
-  gap: 8px;
+  gap: 6px;
   flex: 1;
+  flex-wrap: nowrap;
+  padding: 0;
 }
 
-/* Dots: 44x44 touch target, small visual dot */
 .dot{
   width: 44px;
   height: 44px;
@@ -936,8 +937,10 @@ body.modal-open{ overflow: hidden; }
   .carousel-ui{ gap: 8px; padding: 10px 12px 10px; }
   .cbtn{ width: 42px; height: 42px; border-radius: 14px; }
   .cbtn.ghost{ width: 78px; }
-  .dot{ width: 10px; height: 10px; }
+  .dot::after{ width: 10px; height: 10px; }
   .slide figcaption{ left: 12px; bottom: 12px; padding: 9px 10px; border-radius: 14px; }
+
+  .dots{ display: none; }
 }
 
 @media (max-width: 420px){
