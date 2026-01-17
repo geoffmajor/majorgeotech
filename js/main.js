@@ -214,6 +214,7 @@
   const toggleLabel = root.querySelector("[data-toggle-label]");
   const progress = root.querySelector("[data-progress]");
   const frame = root.querySelector(".carousel-frame");
+  const viewBtn = root.querySelector("[data-view]");
 
   if (!track || slides.length === 0 || !prev || !next || !dotsWrap || !toggleAuto || !frame) return;
 
@@ -301,11 +302,15 @@
   let startY = 0;
   let dragging = false;
   let axis = null;
+  // Used to prevent the "tap" handler from firing after a swipe.
+  let didSwipe = false;
+  let suppressNextClickUntil = 0;
 
   const onDown = (e) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
     dragging = true;
     axis = null;
+    didSwipe = false;
     startX = e.clientX;
     startY = e.clientY;
     frame.setPointerCapture?.(e.pointerId);
@@ -324,7 +329,10 @@
     }
 
     // If we're swiping horizontally, prevent the page from scrolling.
-    if (axis === "x") e.preventDefault();
+    if (axis === "x") {
+      didSwipe = true;
+      e.preventDefault();
+    }
   };
 
   const onUp = (e) => {
@@ -342,6 +350,10 @@
     if (dx > threshold) step(-1, true);
     else if (dx < -threshold) step(1, true);
 
+    // Mobile browsers often fire a click after a swipe. Suppress it so the
+    // play/pause label does not flicker.
+    if (didSwipe) suppressNextClickUntil = performance.now() + 450;
+
     tempResume();
   };
 
@@ -351,71 +363,102 @@
   frame.addEventListener("pointercancel", onUp);
 
   // --- Autoplay + progress ---
-  // Uses requestAnimationFrame so the progress bar stays in sync.
-  let auto = !prefersReducedMotion;
+  // We track "enabled" separately from "running" so temporary pauses (swipe/hover/focus)
+  // do not flip the Play/Pause label.
   const intervalMs = 6500;
-  let startTs = 0;
+  let autoplayEnabled = !prefersReducedMotion;
+  let running = false;
   let rafId = 0;
+  let lastTickTs = 0;
+  let elapsedCarry = 0;
 
   const setToggleA11y = () => {
-    const isPlaying = auto && !prefersReducedMotion;
+    const isPlaying = autoplayEnabled && !prefersReducedMotion;
     if (toggleLabel) toggleLabel.textContent = isPlaying ? "Pause" : "Play";
     toggleAuto.setAttribute("aria-label", isPlaying ? "Pause slideshow" : "Play slideshow");
   };
 
-  const tick = (ts) => {
-    if (!auto || prefersReducedMotion) return;
-    if (!startTs) startTs = ts;
-
-    const elapsed = ts - startTs;
-    const pct = Math.min(100, (elapsed / intervalMs) * 100);
+  const renderProgress = (elapsedMs) => {
+    const pct = Math.min(100, (elapsedMs / intervalMs) * 100);
     if (progress) progress.style.width = `${pct}%`;
+  };
+
+  const tick = (ts) => {
+    if (!running || !autoplayEnabled || prefersReducedMotion) return;
+
+    if (!lastTickTs) lastTickTs = ts;
+    const elapsed = elapsedCarry + (ts - lastTickTs);
+    renderProgress(elapsed);
 
     if (elapsed >= intervalMs) {
-      startTs = ts;
+      elapsedCarry = 0;
+      lastTickTs = ts;
+      if (progress) progress.style.width = "0%";
       step(1, false);
     }
 
     rafId = requestAnimationFrame(tick);
   };
 
-  const stopAuto = () => {
-    auto = false;
-    if (progress) progress.style.width = "0%";
-    startTs = 0;
+  const pauseTimer = ({ resetProgress = false } = {}) => {
+    if (!running) return;
+    running = false;
     if (rafId) cancelAnimationFrame(rafId);
     rafId = 0;
-    setToggleA11y();
+
+    if (lastTickTs) {
+      elapsedCarry += performance.now() - lastTickTs;
+      lastTickTs = 0;
+    }
+
+    if (resetProgress) {
+      elapsedCarry = 0;
+      if (progress) progress.style.width = "0%";
+    }
   };
 
-  const startAuto = () => {
-    if (prefersReducedMotion) return;
-    auto = true;
-    startTs = 0;
-    setToggleA11y();
+  const startTimer = ({ resetProgress = true } = {}) => {
+    if (!autoplayEnabled || prefersReducedMotion) return;
+    running = true;
+
+    if (resetProgress) {
+      elapsedCarry = 0;
+      if (progress) progress.style.width = "0%";
+    }
+
+    lastTickTs = 0;
     if (rafId) cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(tick);
   };
 
   const restartAuto = () => {
-    if (!auto || prefersReducedMotion) return;
-    startTs = 0;
+    if (!autoplayEnabled || prefersReducedMotion) return;
+    elapsedCarry = 0;
+    lastTickTs = 0;
     if (progress) progress.style.width = "0%";
   };
 
+  const setAutoplayEnabled = (enabled) => {
+    autoplayEnabled = Boolean(enabled) && !prefersReducedMotion;
+    setToggleA11y();
+    if (autoplayEnabled) startTimer({ resetProgress: true });
+    else pauseTimer({ resetProgress: true });
+  };
+
   toggleAuto.addEventListener("click", () => {
-    if (auto) stopAuto();
-    else startAuto();
+    setAutoplayEnabled(!autoplayEnabled);
   });
 
   // Temporarily pause autoplay while the user interacts.
-  let wasRunning = auto;
+  let tempWasRunning = false;
   const tempPause = () => {
-    wasRunning = auto;
-    if (auto) stopAuto();
+    if (!autoplayEnabled || prefersReducedMotion) return;
+    tempWasRunning = running;
+    pauseTimer({ resetProgress: false });
   };
   const tempResume = () => {
-    if (wasRunning && !prefersReducedMotion) startAuto();
+    if (!autoplayEnabled || prefersReducedMotion) return;
+    if (tempWasRunning) startTimer({ resetProgress: false });
   };
 
   frame.addEventListener("mouseenter", tempPause);
@@ -423,8 +466,166 @@
   frame.addEventListener("focusin", tempPause);
   frame.addEventListener("focusout", tempResume);
 
+  // Tap/click the image area to toggle autoplay.
+  // Also supports a quick double-tap / double-click to open the viewer while paused.
+  let lastTapAt = 0;
+  frame.addEventListener("click", (e) => {
+    const target = e.target;
+    if (!(target instanceof Element)) return;
+    if (performance.now() < suppressNextClickUntil) return;
+    if (target.closest("[data-prev], [data-next], [data-toggle], [data-view], .dot")) return;
+
+    const now = performance.now();
+    const isDoubleTap = now - lastTapAt < 320;
+    lastTapAt = now;
+
+    // If paused and the user double-taps, open the viewer.
+    if (!autoplayEnabled && isDoubleTap) {
+      openViewer();
+      return;
+    }
+
+    setAutoplayEnabled(!autoplayEnabled);
+  });
+
+  // Desktop-friendly: double click opens the viewer.
+  frame.addEventListener("dblclick", (e) => {
+    const target = e.target;
+    if (!(target instanceof Element)) return;
+    if (target.closest("[data-prev], [data-next], [data-toggle], [data-view], .dot")) return;
+    openViewer();
+  });
+
+  // --- Image viewer modal ---
+  const imageModal = document.querySelector("[data-image-modal]");
+  const imagePanel = document.querySelector("[data-image-panel]");
+  const imageCloseEls = Array.from(document.querySelectorAll("[data-image-close]"));
+  const imagePrev = document.querySelector("[data-image-prev]");
+  const imageNext = document.querySelector("[data-image-next]");
+  const imageFull = document.querySelector("[data-image-full]");
+  const imageCaption = document.querySelector("[data-image-caption]");
+  const imageTitle = document.querySelector("[data-image-title]") || document.getElementById("image-title");
+
+  let imageLastFocus = null;
+  let resumeAfterViewer = false;
+
+  const getActiveSlide = () => slides[index];
+  const getActiveImg = () => getActiveSlide()?.querySelector("img");
+
+  const updateViewer = () => {
+    if (!imageFull || !imageCaption) return;
+    const img = getActiveImg();
+    if (!img) return;
+
+    // Prefer the highest quality source available.
+    const src = img.currentSrc || img.getAttribute("src") || "";
+    const alt = img.getAttribute("alt") || "";
+    const cap = getActiveSlide()?.querySelector("figcaption")?.textContent || alt;
+
+    imageFull.src = src;
+    imageFull.alt = alt;
+    imageCaption.textContent = cap;
+    if (imageTitle) imageTitle.textContent = cap || "Photo";
+  };
+
+  const openViewer = () => {
+    if (!imageModal || !imagePanel) return;
+    if (!imageModal.hasAttribute("hidden")) return;
+
+    imageLastFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    resumeAfterViewer = autoplayEnabled;
+    tempPause();
+
+    updateViewer();
+    imageModal.removeAttribute("hidden");
+    document.body.classList.add("modal-open");
+
+    window.setTimeout(() => {
+      imagePanel.focus({ preventScroll: true });
+    }, 0);
+  };
+
+  const closeViewer = () => {
+    if (!imageModal || !imagePanel) return;
+    if (imageModal.hasAttribute("hidden")) return;
+
+    imageModal.setAttribute("hidden", "");
+    document.body.classList.remove("modal-open");
+
+    if (imageLastFocus) {
+      window.setTimeout(() => {
+        try {
+          imageLastFocus.focus({ preventScroll: true });
+        } catch {
+          // ignore
+        }
+      }, 0);
+    }
+
+    if (resumeAfterViewer && autoplayEnabled && !prefersReducedMotion) {
+      startTimer({ resetProgress: false });
+    }
+  };
+
+  if (viewBtn) viewBtn.addEventListener("click", openViewer);
+  imageCloseEls.forEach((el) => el.addEventListener("click", (e) => {
+    e.preventDefault();
+    closeViewer();
+  }));
+  if (imagePrev) imagePrev.addEventListener("click", () => {
+    step(-1, true);
+    updateViewer();
+  });
+  if (imageNext) imageNext.addEventListener("click", () => {
+    step(1, true);
+    updateViewer();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (!imageModal || imageModal.hasAttribute("hidden")) return;
+
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeViewer();
+      return;
+    }
+
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      step(-1, true);
+      updateViewer();
+      return;
+    }
+
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      step(1, true);
+      updateViewer();
+      return;
+    }
+
+    if (e.key !== "Tab" || !imagePanel) return;
+    const focusables = getFocusable(imagePanel);
+    if (focusables.length === 0) return;
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+    const isShift = e.shiftKey;
+
+    if (isShift && active === first) {
+      e.preventDefault();
+      last.focus();
+      return;
+    }
+    if (!isShift && active === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  });
+
   // Init
   setToggleA11y();
   setActive();
-  if (auto && !prefersReducedMotion) rafId = requestAnimationFrame(tick);
+  if (autoplayEnabled && !prefersReducedMotion) startTimer({ resetProgress: true });
 })();

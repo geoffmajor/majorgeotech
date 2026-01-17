@@ -338,6 +338,12 @@
               </svg>
             </button>
 
+            <button class="cbtn" type="button" data-view aria-label="View larger image">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 4H5v4M15 4h4v4M9 20H5v-4M15 20h4v-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </button>
+
             <button class="cbtn ghost" type="button" data-toggle aria-label="Pause slideshow">
               <span data-toggle-label>Pause</span>
             </button>
@@ -428,6 +434,60 @@
       <div class="modal-foot">
         <span class="modal-hint hint-desktop">Press Esc or click outside to close.</span>
         <span class="modal-hint hint-mobile">Tap outside to close.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Modal (Gallery) -->
+  <div class="modal" data-image-modal hidden>
+    <div class="modal-backdrop" data-image-close aria-hidden="true"></div>
+
+    <div
+      class="modal-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="image-title"
+      tabindex="-1"
+      data-image-panel
+    >
+      <div class="modal-head">
+        <div class="modal-head-left">
+          <p class="modal-kicker">Gallery</p>
+          <h2 class="modal-title" id="image-title">Photo</h2>
+        </div>
+
+        <button class="iconbtn" type="button" data-image-close aria-label="Close image dialog">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body image-modal-body">
+        <div class="modal-primary image-modal-primary" aria-label="Image preview">
+          <div class="image-modal-toolbar" aria-label="Image controls">
+            <button class="cbtn" type="button" data-image-prev aria-label="Previous image">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M14.5 5.5L8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </button>
+
+            <button class="cbtn" type="button" data-image-next aria-label="Next image">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9.5 5.5L16 12l-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="image-modal-media">
+            <img data-image-full alt="" decoding="async" />
+          </div>
+        </div>
+
+        <div class="modal-details image-modal-details" aria-label="Image details">
+          <p class="image-modal-caption" data-image-caption></p>
+          <p class="modal-hint">Tip: pinch-to-zoom on mobile.</p>
+        </div>
       </div>
     </div>
   </div>

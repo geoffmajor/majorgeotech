@@ -623,6 +623,30 @@ h2{
   background: rgba(255,255,255,.58);
 }
 
+.cbtn.ghost[data-toggle] {
+  cursor: pointer;
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
+}
+
+.cbtn.ghost[data-toggle]:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.cbtn.ghost[data-toggle]:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.cbtn.ghost[data-toggle]:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.85),
+    0 0 0 4px rgba(0, 0, 0, 0.35);
+}
+
 .dots{
   display:flex;
   align-items:center;
@@ -889,6 +913,41 @@ body.modal-open{ overflow: hidden; }
 .modal-hint{
   color: rgba(11,18,36,.62);
   font-size: 13px;
+}
+
+/* Image viewer modal */
+.image-modal-body{
+  grid-template-columns: 1fr;
+}
+
+.image-modal-primary{
+  padding: 12px;
+}
+
+.image-modal-toolbar{
+  display:flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.image-modal-media{
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(11,18,36,.10);
+  background: rgba(255,255,255,.75);
+}
+
+.image-modal-media img{
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.image-modal-caption{
+  margin: 0 0 8px;
+  color: rgba(11,18,36,.78);
+  line-height: 1.55;
 }
 
 .hint-mobile{ display: none; }
