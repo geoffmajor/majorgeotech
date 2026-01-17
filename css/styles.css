@@ -517,6 +517,11 @@ h2{
 }
 .carousel-track::-webkit-scrollbar{ display:none; }
 
+.carousel-track:focus-visible {
+  outline: 3px solid rgba(31,63,191,.5);
+  outline-offset: 4px;
+}
+
 .slide{
   flex: 0 0 100%;
   min-width: 100%;

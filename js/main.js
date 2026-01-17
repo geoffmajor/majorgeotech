@@ -206,6 +206,14 @@
   let auto = !prefersReduced;
   const intervalMs = 6500;
 
+  const setToggleA11y = () => {
+  if (!toggleAuto) return;
+  const isPlaying = auto && !prefersReduced;
+  const label = isPlaying ? "Pause" : "Play";
+  if (toggleLabel) toggleLabel.textContent = label;
+  toggleAuto.setAttribute("aria-label", isPlaying ? "Pause slideshow" : "Play slideshow");
+};
+
   // Scroll-snap based carousel.
   // This avoids WebKit rounding glitches that can happen when animating a
   // transformed track inside an overflow+radius container.
@@ -295,16 +303,16 @@
 
   const stopAuto = () => {
     auto = false;
-    if (toggleLabel) toggleLabel.textContent = "Start";
     if (progress) progress.style.width = "0%";
     startTs = 0;
+    setToggleA11y();
   };
 
   const startAuto = () => {
     if (prefersReduced) return;
     auto = true;
-    if (toggleLabel) toggleLabel.textContent = "Pause";
     startTs = 0;
+    setToggleA11y();
     requestAnimationFrame(tick);
   };
 
@@ -389,10 +397,6 @@
   }
 
   render("auto");
-  if (auto) {
-    if (toggleLabel) toggleLabel.textContent = "Pause";
-    if (!prefersReduced) requestAnimationFrame(tick);
-  } else {
-    if (toggleLabel) toggleLabel.textContent = "Start";
-  }
+  setToggleA11y();
+  if (auto && !prefersReduced) requestAnimationFrame(tick);
 })();

@@ -14,6 +14,8 @@
 
   <meta name="theme-color" content="#1f3fbf" />
 
+  <meta name="robots" content="index, follow" />
+
   <link rel="canonical" href="https://www.majorgeotech.com/" />
 
   <link rel="icon" type="image/webp" href="./assets/logo-square.webp" />
@@ -28,7 +30,15 @@
   <link
     rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap"
+    media="print"
+    onload="this.media='all'"
   />
+  <noscript>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap"
+    />
+  </noscript>
 
   <link rel="stylesheet" href="./css/styles.css" />
 
@@ -74,7 +84,14 @@
   <header class="header" data-header>
     <div class="container header-inner">
       <a class="brand" href="#top" aria-label="Major Geotech">
-        <img class="brand-logo" src="./assets/logo.webp" alt="Major Geotech logo" />
+        <img
+          class="brand-logo"
+          src="./assets/logo.webp"
+          alt="Major Geotech logo"
+          width="512"
+          height="354"
+          decoding="async"
+        />
         <span class="brand-name">Major Geotech</span>
       </a>
 
@@ -92,7 +109,15 @@
     <section id="introduction" class="hero" aria-label="Introduction">
       <div class="container hero-inner">
         <div class="hero-mark" aria-hidden="true">
-          <img src="./assets/logo.webp" alt="" class="hero-logo" />
+          <img
+            src="./assets/logo.webp"
+            alt=""
+            class="hero-logo"
+            width="380"
+            height="380"
+            fetchpriority="high"
+            decoding="async"
+          />
         </div>
 
         <div class="hero-content">
@@ -190,26 +215,54 @@
               class="carousel-track"
               data-track
               tabindex="0"
-              role="group"
+              role="region"
               aria-label="Gallery slides. Use left and right arrow keys to navigate."
             >
               <figure class="slide">
-                <img src="./assets/gallery/optimized-slope-cemented-alluvium.webp" alt="Optimized slope in cemented alluvium" />
+                <img
+                  src="./assets/gallery/optimized-slope-cemented-alluvium.webp"
+                  alt="Optimized slope in cemented alluvium"
+                  loading="lazy"
+                  decoding="async"
+                  width="1537"
+                  height="2048"
+                />
                 <figcaption>Optimized slope in cemented alluvium</figcaption>
               </figure>
 
               <figure class="slide">
-                <img src="./assets/gallery/optimized-slope-hard-rock.webp" alt="Optimized slope in hard rock" />
+                <img
+                  src="./assets/gallery/optimized-slope-hard-rock.webp"
+                  alt="Optimized slope in hard rock"
+                  loading="lazy"
+                  decoding="async"
+                  width="2048"
+                  height="1532"
+                />
                 <figcaption>Optimized slope in hard rock</figcaption>
               </figure>
 
               <figure class="slide">
-                <img src="./assets/gallery/bingham-canyon-manefay-failure.webp" alt="Bingham Canyon manefay failure of 145 million tons that travelled 1.5 miles in 90 seconds" />
+                <img
+                  src="./assets/gallery/bingham-canyon-manefay-failure.webp"
+                  alt="Bingham Canyon manefay failure of 145 million tons that travelled 1.5 miles in 90 seconds"
+                  loading="lazy"
+                  decoding="async"
+                  width="2048"
+                  height="1541"
+                />
                 <figcaption>Bingham Canyon manefay failure of 145 million tons that travelled 1.5 miles in 90 seconds</figcaption>
               </figure>
 
               <figure class="slide">
-                <img src="./assets/gallery/pipeline-rupture-landslide.webp" alt="Pipeline rupture in landslide" />
+                <img
+                  src="./assets/gallery/pipeline-rupture-landslide.webp"
+                  alt="Pipeline rupture in landslide"
+                  loading="lazy"
+                  decoding="async"
+                  width="2048"
+                  height="1370"
+                />
                 <figcaption>Pipeline rupture in landslide</figcaption>
               </figure>
             </div>
@@ -232,7 +285,7 @@
               </svg>
             </button>
 
-            <button class="cbtn ghost" type="button" data-toggle aria-label="Toggle autoplay">
+            <button class="cbtn ghost" type="button" data-toggle aria-label="Pause slideshow">
               <span data-toggle-label>Pause</span>
             </button>
           </div>
