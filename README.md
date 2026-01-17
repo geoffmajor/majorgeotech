@@ -4,7 +4,7 @@ This repository contains the public website for **Major Geotech PLLC**, a geotec
 
 The site is a single-page static website hosted on **GitHub Pages** and served at:
 
-https://www.majorgeotech.com
+https://majorgeotech.com
 
 ---
 
