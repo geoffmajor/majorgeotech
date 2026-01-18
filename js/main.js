@@ -11,11 +11,18 @@
    * - Gallery carousel (crossfade, infinite loop, swipe, keyboard, optional autoplay)
    */
 
-  // Footer year
+  // ============================================================================
+  // Footer Year
+  // ============================================================================
+  // Dynamically update the copyright year in the footer.
   const year = document.getElementById("year");
   if (year) year.textContent = String(new Date().getFullYear());
 
-  // Sticky header: keep in-page anchors from landing under the header
+  // ============================================================================
+  // Scroll Padding for Sticky Header
+  // ============================================================================
+  // Calculate and set CSS scroll padding to prevent anchor links from landing
+  // under the sticky header. Updates on resize to handle dynamic header height.
   const header = document.querySelector("[data-header]");
   const getHeaderH = () => (header ? Math.ceil(header.getBoundingClientRect().height) : 0);
 
@@ -29,9 +36,17 @@
   setScrollPad();
   window.addEventListener("resize", setScrollPad, { passive: true });
 
+  // ============================================================================
+  // Accessibility: Reduced Motion Preference
+  // ============================================================================
+  // Respect user's motion preferences for autoplay and animations.
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Contact modal
+  // ============================================================================
+  // Contact Modal
+  // ============================================================================
+  // Modal dialog for contact information with hash-based navigation, focus
+  // trapping, keyboard support, and copy-to-clipboard functionality.
   const modal = document.querySelector("[data-contact-modal]");
   const panel = document.querySelector("[data-contact-panel]");
   const openers = Array.from(document.querySelectorAll("[data-contact-open]"));
@@ -40,6 +55,12 @@
   // Track the element that opened the modal so we can restore focus on close.
   let lastFocus = null;
 
+  /**
+   * Get all focusable elements within a root element.
+   * Filters out hidden elements and disabled buttons.
+   * @param {HTMLElement} root - The root element to search within
+   * @returns {HTMLElement[]} Array of focusable elements
+   */
   const getFocusable = (root) => {
     const sel =
       'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
@@ -148,12 +169,18 @@
     }
   });
 
-  // Clipboard helper with a small fallback for older / stricter browsers.
+  /**
+   * Copy text to clipboard with fallback for older browsers.
+   * Uses modern Clipboard API when available, falls back to execCommand.
+   * @param {string} text - The text to copy
+   * @returns {Promise<boolean>} True if copy succeeded, false otherwise
+   */
   const copyText = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
       return true;
     } catch {
+      // Fallback for older browsers or strict security contexts
       const ta = document.createElement("textarea");
       ta.value = text;
       ta.style.position = "fixed";
@@ -205,10 +232,16 @@
     true
   );
 
-  // Carousel (crossfade, infinite loop, swipe)
+  // ============================================================================
+  // Gallery Carousel
+  // ============================================================================
+  // Interactive image carousel with crossfade transitions, infinite loop,
+  // swipe gestures, keyboard navigation, and optional autoplay.
+  // Early return if carousel elements are not found.
   const root = document.querySelector("[data-carousel]");
   if (!root) return;
 
+  // Carousel DOM elements
   const track = root.querySelector("[data-track]");
   const slides = Array.from(root.querySelectorAll(".slide"));
   const prev = root.querySelector("[data-prev]");
@@ -220,8 +253,10 @@
   const frame = root.querySelector(".carousel-frame");
   const viewBtn = root.querySelector("[data-view]");
 
+  // Validate required elements exist
   if (!track || slides.length === 0 || !prev || !next || !dotsWrap || !toggleAuto || !frame) return;
 
+  // Carousel state
   const n = slides.length;
   let index = 0;
 
@@ -243,8 +278,17 @@
     return b;
   });
 
+  /**
+   * Clamp index to valid range using modulo for infinite loop.
+   * @param {number} i - The index to clamp
+   * @returns {number} Valid index within [0, n-1]
+   */
   const clamp = (i) => (i + n) % n;
 
+  /**
+   * Update active slide state and accessibility attributes.
+   * Manages tabindex for focus management and aria-current for pagination.
+   */
   const setActive = () => {
     slides.forEach((s, i) => {
       const isActive = i === index;
@@ -277,12 +321,22 @@
     });
   };
 
+  /**
+   * Navigate to a specific slide.
+   * @param {number} i - Target slide index
+   * @param {boolean} user - Whether this was triggered by user interaction
+   */
   const goTo = (i, user = false) => {
     index = clamp(i);
     setActive();
     if (user) restartAuto();
   };
 
+  /**
+   * Navigate to next/previous slide.
+   * @param {number} dir - Direction: -1 for previous, 1 for next
+   * @param {boolean} user - Whether this was triggered by user interaction
+   */
   const step = (dir, user = false) => goTo(index + dir, user);
 
   prev.addEventListener("click", () => step(-1, true));
@@ -301,7 +355,12 @@
   root.addEventListener("keydown", onKey);
   track.addEventListener("keydown", onKey);
 
-  // Swipe (Pointer Events) with a little axis-lock so vertical scroll still works.
+  // ============================================================================
+  // Swipe Gesture Handling (Pointer Events)
+  // ============================================================================
+  // Implements horizontal swipe detection with axis locking to preserve
+  // vertical scrolling. Suppresses click events after swipes to prevent
+  // accidental interactions.
   let startX = 0;
   let startY = 0;
   let dragging = false;
@@ -366,9 +425,12 @@
   frame.addEventListener("pointerup", onUp);
   frame.addEventListener("pointercancel", onUp);
 
-  // Autoplay + progress
-  // We track "enabled" separately from "running" so temporary pauses (swipe/hover/focus)
-  // do not flip the Play/Pause label.
+  // ============================================================================
+  // Autoplay Timer System
+  // ============================================================================
+  // Manages carousel autoplay with progress indicator. Uses requestAnimationFrame
+  // for smooth progress updates. Tracks "enabled" separately from "running" so
+  // temporary pauses (swipe/hover/focus) don't flip the Play/Pause label.
   const intervalMs = 6500;
   let autoplayEnabled = !prefersReducedMotion;
   let running = false;
@@ -500,7 +562,11 @@
     openViewer();
   });
 
-  // Image viewer modal
+  // ============================================================================
+  // Image Viewer Modal
+  // ============================================================================
+  // Full-screen image viewer synchronized with carousel state. Supports
+  // keyboard navigation, focus trapping, and preserves autoplay state.
   const imageModal = document.querySelector("[data-image-modal]");
   const imagePanel = document.querySelector("[data-image-panel]");
   const imageCloseEls = Array.from(document.querySelectorAll("[data-image-close]"));
@@ -513,15 +579,28 @@
   let imageLastFocus = null;
   let resumeAfterViewer = false;
 
+  /**
+   * Get the currently active slide element.
+   * @returns {HTMLElement|null} The active slide element
+   */
   const getActiveSlide = () => slides[index];
+
+  /**
+   * Get the image element from the currently active slide.
+   * @returns {HTMLImageElement|null} The active slide's image element
+   */
   const getActiveImg = () => getActiveSlide()?.querySelector("img");
 
+  /**
+   * Update the image viewer with the current slide's content.
+   * Uses the highest quality image source available (from srcset).
+   */
   const updateViewer = () => {
     if (!imageFull || !imageCaption) return;
     const img = getActiveImg();
     if (!img) return;
 
-    // Prefer the highest quality source available.
+    // Prefer the highest quality source available (from srcset).
     const src = img.currentSrc || img.getAttribute("src") || "";
     const alt = img.getAttribute("alt") || "";
     const cap = getActiveSlide()?.querySelector("figcaption")?.textContent || alt;
@@ -628,7 +707,11 @@
     }
   });
 
-  // Init / initial render
+  // ============================================================================
+  // Initialization
+  // ============================================================================
+  // Set up initial carousel state: accessibility labels, active slide, and
+  // start autoplay if enabled and motion is not reduced.
   setToggleA11y();
   setActive();
   if (autoplayEnabled && !prefersReducedMotion) startTimer({ resetProgress: true });

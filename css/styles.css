@@ -1,4 +1,6 @@
-/* Mobile tap + selection polish */
+/* ============================================================================
+   Mobile Touch & Selection Polish
+   ============================================================================ */
 
 /* Remove blue tap highlight on mobile Chrome (Android) */
 a,
@@ -22,40 +24,56 @@ label {
   color: #0b1224;
 }
 
-/* prevent long-press callout on images */
+/* Prevent long-press callout on images */
 img{
   -webkit-touch-callout: none;
 }
 
 
+/* ============================================================================
+   CSS Custom Properties (Design Tokens)
+   ============================================================================ */
 :root{
+  /* Brand Colors */
   --blue: #1f3fbf;
   --blue2: #0b2fa6;
 
+  /* Background Colors */
   --paper: #eef2f8;
   --paper2: #e8eef7;
 
+  /* Text Colors */
   --ink: #0b1224;
   --muted: rgba(11,18,36,.74);
 
+  /* Border Colors */
   --border: rgba(11,18,36,.12);
 
-  /* Shadow + geometry */
+  /* Shadow & Geometry */
   --shadow: 0 18px 70px rgba(2,6,23,.12);
 
+  /* Spacing */
   --section-gap: 48px;
 
+  /* Border Radius */
   --radius-sm: 12px;
   --radius: 18px;
   --radius2: 26px;
-  --max: 1040px;
 
+  /* Layout */
+  --max: 1040px;
   --scroll-pad: 92px;
 
+  /* Typography */
   --font-body: "Inter", "InterFallback", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
   --font-head: "Manrope", "ManropeFallback", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
 }
 
+/* ============================================================================
+   Font Fallbacks
+   ============================================================================ */
+/* Custom font fallbacks with size and metric adjustments to match web fonts
+   during loading, preventing layout shift (FOUT/FOIT). */
 @font-face{
   font-family: "InterFallback";
   src: local("Segoe UI"), local("Helvetica Neue"), local("Arial");
@@ -74,7 +92,13 @@ img{
   size-adjust: 105%;
 }
 
+/* ============================================================================
+   Base Styles
+   ============================================================================ */
 *{ box-sizing:border-box; }
+
+/* Scroll behavior: auto prevents smooth scrolling on anchor links.
+   Scroll padding accounts for sticky header height (set via JS). */
 html{ scroll-behavior: auto; scroll-padding-top: var(--scroll-pad); }
 
 body{
@@ -84,14 +108,14 @@ body{
   color: var(--ink);
   position: relative;
 
-  /* Base */
+  /* Layered background gradients for depth */
   background:
     radial-gradient(1200px 700px at 18% -12%, rgba(31,63,191,.22), transparent 60%),
     radial-gradient(900px 560px at 92% 8%, rgba(31,63,191,.14), transparent 62%),
     linear-gradient(180deg, #eef3fb 0%, #e8eff9 100%);
 }
 
-/* Subtle strata bands */
+/* Subtle decorative strata bands overlay */
 body::before{
   content:"";
   position: fixed;
@@ -137,6 +161,11 @@ img{ max-width:100%; display:block; }
 a{ color: inherit; }
 .icon{ width: 18px; height: 18px; flex: 0 0 auto; }
 
+/* ============================================================================
+   Utility Classes
+   ============================================================================ */
+
+/* Screen reader only: visually hidden but accessible to assistive tech */
 .sr-only{
   position: absolute;
   width: 1px;
@@ -149,13 +178,16 @@ a{ color: inherit; }
   border: 0;
 }
 
+/* Container: centered content with max-width */
 .container{
   width: min(var(--max), calc(100% - 40px));
   margin: 0 auto;
 }
 
+/* Anchor point for "back to top" navigation */
 .top-anchor{ position:absolute; top:0; left:0; }
 
+/* Skip link: hidden until focused for keyboard navigation */
 .skip-link{
   position:absolute;
   left:-9999px;
@@ -179,7 +211,9 @@ a{ color: inherit; }
   background: rgba(31,63,191,.10);
 }
 
-/* Header */
+/* ============================================================================
+   Header
+   ============================================================================ */
 .header{
   position: sticky;
   top: 0;
@@ -241,7 +275,9 @@ a{ color: inherit; }
   background: linear-gradient(90deg, transparent 0%, var(--blue) 18%, rgba(31,63,191,.45) 55%, transparent 100%);
 }
 
-/* Hero */
+/* ============================================================================
+   Hero Section
+   ============================================================================ */
 .hero{
   padding: calc(var(--section-gap) + 8px) 0 var(--section-gap);
   position: relative;
@@ -402,7 +438,9 @@ a{ color: inherit; }
 }
 .clean-list li{ margin: 8px 0; }
 
-/* Sections */
+/* ============================================================================
+   Sections
+   ============================================================================ */
 .section{ padding: var(--section-gap) 0; }
 
 .section + .section{
@@ -439,7 +477,9 @@ h2{
   mask-image: linear-gradient(90deg, black 0%, black 75%, transparent 100%);
 }
 
-/* Services */
+/* ============================================================================
+   Services Section
+   ============================================================================ */
 .services-grid{
   display:grid;
   grid-template-columns: 1.35fr 0.9fr;
@@ -485,7 +525,10 @@ h2{
 }
 .service-card li{ margin: 8px 0; }
 
-/* Gallery section: full-width treatment (no inset card) */
+/* ============================================================================
+   Gallery Section
+   ============================================================================ */
+/* Full-width treatment (no inset card) */
 .section.section-alt{
   position: relative;
   background: transparent;
@@ -509,7 +552,10 @@ h2{
   z-index: 1;
 }
 
-/* Carousel */
+/* ============================================================================
+   Carousel
+   ============================================================================ */
+/* Main carousel container */
 .carousel{
   background: rgba(255,255,255,.82);
   border: 1px solid rgba(11,18,36,.12);
@@ -691,7 +737,9 @@ h2{
 .progress{ height: 3px; background: rgba(31,63,191,.10); }
 .progress-bar{ height: 100%; width: 0%; background: linear-gradient(90deg, var(--blue), rgba(31,63,191,.55)); }
 
-/* Buttons */
+/* ============================================================================
+   Buttons
+   ============================================================================ */
 .btn{
   display: inline-flex;
   align-items: center;
@@ -723,7 +771,9 @@ h2{
   color: rgba(11,47,166,.96);
 }
 
-/* Footer */
+/* ============================================================================
+   Footer
+   ============================================================================ */
 .footer{
   border-top: 1px solid rgba(11,18,36,.10);
   padding: 18px 0 20px;
@@ -773,7 +823,10 @@ h2{
   border-bottom-color: rgba(31,63,191,.45);
 }
 
-/* Modal */
+/* ============================================================================
+   Modal Dialogs
+   ============================================================================ */
+/* Prevent body scroll when modal is open */
 body.modal-open{ overflow: hidden; }
 
 .modal{
@@ -918,7 +971,7 @@ body.modal-open{ overflow: hidden; }
   font-size: 13px;
 }
 
-/* Image viewer modal */
+/* Image viewer modal: single column layout */
 .image-modal-body{
   grid-template-columns: 1fr;
 }
@@ -955,7 +1008,10 @@ body.modal-open{ overflow: hidden; }
 
 .hint-mobile{ display: none; }
 
-/* Hover polish */
+/* ============================================================================
+   Hover Effects
+   ============================================================================ */
+/* Only apply hover effects on devices that support hover */
 @media (hover:hover) and (pointer:fine){
   .btn,
   .nav-cta{ transition: background 140ms ease, box-shadow 160ms ease; }
@@ -1004,7 +1060,9 @@ body.modal-open{ overflow: hidden; }
   }
 }
 
-/* Responsive */
+/* ============================================================================
+   Responsive Breakpoints
+   ============================================================================ */
 @media (max-width: 980px){
   .services-grid{ grid-template-columns: 1fr; }
   .services-grid > .service-card:first-child{ grid-row: auto; }
@@ -1050,11 +1108,18 @@ body.modal-open{ overflow: hidden; }
   }
 }
 
+/* ============================================================================
+   Accessibility: Reduced Motion
+   ============================================================================ */
 @media (prefers-reduced-motion: reduce){
   .carousel-track{ scroll-behavior: auto; }
 }
 
-/* Carousel: crossfade stack (used by the JS carousel) */
+/* ============================================================================
+   Carousel: Crossfade Stack (JavaScript-Controlled)
+   ============================================================================ */
+/* These styles override the default scroll-based carousel behavior.
+   JavaScript manages crossfade transitions by toggling .is-active class. */
 
 .carousel-track{
   /* Disable scrolling behavior for the carousel area */
@@ -1064,7 +1129,7 @@ body.modal-open{ overflow: hidden; }
   scroll-behavior: auto !important;
   -webkit-overflow-scrolling: auto !important;
 
-  /* Crossfade stack */
+  /* Crossfade stack: all slides positioned absolutely, only active one visible */
   position: relative;
   height: 100% !important;
 }
