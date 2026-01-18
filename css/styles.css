@@ -649,13 +649,6 @@ h2{
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
   }
 }
-/* Only apply hover styling on devices that truly support hover */
-@media (hover: hover) and (pointer: fine) {
-  .cbtn.ghost[data-toggle]:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    transform: translateY(-1px);
-  }
-}
 
 .dots{
   display:flex;

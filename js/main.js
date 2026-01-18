@@ -1,17 +1,21 @@
 (() => {
   /**
-   * Site behavior:
-   * - Updates the footer year
-   * - Sets a CSS scroll padding var so in-page anchors land below the sticky header
-   * - Contact modal (supports #contact, focus trap, Escape, and copy-to-clipboard)
-   * - Carousel (crossfade, infinite loop, swipe, keyboard, optional autoplay)
+   * Global site behavior for this page.
+   *
+   * Kept in one IIFE to avoid leaking globals.
+   *
+   * Includes:
+   * - Footer year
+   * - CSS scroll padding for anchor jumps (accounts for the sticky header)
+   * - Contact modal (hash support, focus trap, Escape, copy-to-clipboard)
+   * - Gallery carousel (crossfade, infinite loop, swipe, keyboard, optional autoplay)
    */
 
-  // --- Footer year ---
+  // Footer year
   const year = document.getElementById("year");
   if (year) year.textContent = String(new Date().getFullYear());
 
-  // --- Sticky header: keep anchor jumps from hiding under the header ---
+  // Sticky header: keep in-page anchors from landing under the header
   const header = document.querySelector("[data-header]");
   const getHeaderH = () => (header ? Math.ceil(header.getBoundingClientRect().height) : 0);
 
@@ -27,7 +31,7 @@
 
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // --- Contact modal ---
+  // Contact modal
   const modal = document.querySelector("[data-contact-modal]");
   const panel = document.querySelector("[data-contact-panel]");
   const openers = Array.from(document.querySelectorAll("[data-contact-open]"));
@@ -88,7 +92,7 @@
     }
   };
 
-  // Open the modal if the page loads (or navigates) to #contact.
+  // Open the modal if the page loads (or later navigates) to #contact.
   const openOnHash = () => {
     if (location.hash === "#contact") openContact();
   };
@@ -144,7 +148,7 @@
     }
   });
 
-  // Clipboard helper with a small fallback for older/stricter browsers.
+  // Clipboard helper with a small fallback for older / stricter browsers.
   const copyText = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -201,7 +205,7 @@
     true
   );
 
-  // --- Carousel (crossfade, infinite loop, swipe) ---
+  // Carousel (crossfade, infinite loop, swipe)
   const root = document.querySelector("[data-carousel]");
   if (!root) return;
 
@@ -350,8 +354,8 @@
     if (dx > threshold) step(-1, true);
     else if (dx < -threshold) step(1, true);
 
-    // Mobile browsers often fire a click after a swipe. Suppress it so the
-    // play/pause label does not flicker.
+    // Some mobile browsers fire a click after a swipe. Suppress it so we do not
+    // treat the swipe like a tap on the frame.
     if (didSwipe) suppressNextClickUntil = performance.now() + 450;
 
     tempResume();
@@ -362,7 +366,7 @@
   frame.addEventListener("pointerup", onUp);
   frame.addEventListener("pointercancel", onUp);
 
-  // --- Autoplay + progress ---
+  // Autoplay + progress
   // We track "enabled" separately from "running" so temporary pauses (swipe/hover/focus)
   // do not flip the Play/Pause label.
   const intervalMs = 6500;
@@ -496,7 +500,7 @@
     openViewer();
   });
 
-  // --- Image viewer modal ---
+  // Image viewer modal
   const imageModal = document.querySelector("[data-image-modal]");
   const imagePanel = document.querySelector("[data-image-panel]");
   const imageCloseEls = Array.from(document.querySelectorAll("[data-image-close]"));
@@ -624,7 +628,7 @@
     }
   });
 
-  // Init
+  // Init / initial render
   setToggleA11y();
   setActive();
   if (autoplayEnabled && !prefersReducedMotion) startTimer({ resetProgress: true });
